@@ -1,145 +1,157 @@
 # Sculpt
 
-```js
-// Import sculpt
-const sculpt = require('sculpt');
-const {identifier, url, string} = require('sculpt/bindings');
-
-// Our class
-class App {
-
-}
-
-// Model the class
-sculpt.model(App, {
-  id: identifier(),
-  url: url(),
-  email: string()
-});
-```
+This project is a work in progress.
 
 ## Bindings
 
 ```js
-const {identifier, string} = require('sculpt/bindings');
+// Import sculpt
+const sculpt = require('sculpt');
+const {identifier, string, integer} = require('sculpt/bindings');
+
+// Our class
+class User {
+
+}
 
 let userBindings = {
   id: identifier(),
   name: string(),
-  email: string()
+  email: string(),
+  age: integer()
 };
 
-// Model the class
-sculpt.model(App, userBindings);
+sculpt.model(User, userBindings);
 ```
 
-* Identifier
-* String
-* Integer
-* Url
 
+## Data providers
 
-## Set a data provider
+You can set a data provider for a model using `sculpt.provider()`:
 
-You can set a global data provider using `scuplt.provider()`:
 ```js
 const sculpt = require('sculpt');
 const mysqlProvider = require('@sculpt/provider-mysql');
 
+// We'll be connecting to a mysql database
 const mysql = mysqlProvider({
   host: 'localhost',
   user: 'user',
   pass: 'pass'
 });
 
-sculpt.provider(mysql);
+// Tell sculpt that data will be provided through the `users` table
+sculpt.provider(mysql.table('users'), User);
+
+// Fetch a user by ID.
+const user = await sculpt.find(User, {id: 1});
 ```
 
-### Using mutliple providers
+You can also specify a provider when modelling a class by passing it as an option to `sculpt.model()`:
 
 ```js
-const sculpt = require('sculpt');
-const mysqlProvider = require('@sculpt/provider-mysql');
-const fileSystemProvider = require('@sculpt/provider-fs');
-
-const mysql = mysqlProvider();
-const file = fileSystemProvider();
-
-sculpt.model(App, bindings, {provider: mysql});
-sculpt.model(User, bindings, {provider: file});
-```
-
-
-## Extend your class with sculpt helpers:
-
-```js
-sculpt.model(App, myBindings, {classExtensions: true});
-
-let myApp = App.find({id: 1});
-myApp.save();
-myApp.delete();
+sculpt.model(User, userBindings, {
+  provider: mysqlProvider.table('users')
+});
 ```
 
 
-## Custom Providers
+## Writing custom data providers
 
-`provider.js`
+Data providers must extend the sculpt `Provider` class and shold provide method bodies for `find()`, `create()`, `update()` and `delete()`. Here's an example of a github provider:
 
-```js
-const https = require('https');
-
-
-module.exports = options => {
-  const headers = {'User-Agent': 'sculpt demo'};
-
-  const get = (path) => {
-    return new Promise((resolve, reject) => {
-      const req = https.request(`https://api.github.com${path}`, {headers}, res => {
-        let body = '';
-        res.on('data', data => {body += data});
-        res.on('end', () => resolve(JSON.parse(body)));
-      });
-      req.end();
-    })
-  }
-
-  const find = () => {
-    return get(`/users/${options.user}/repos`);
-  }
-  return {find};
-};
-```
-
-`index.js`
+`app.js`
 
 ```js
-const sculpt = require('../../src');
-const {identity, integer, string} = require('../../src/bindings');
-const githubProvider = require('./provider');
+const sculpt = require('sculpt')();
+const {identity, integer, string} = require('sculpt/bindings');
+const githubProvider = require('./github-provider');
 
-
+// Create the provider
 const github = githubProvider({user: 'keithclark'});
 
+// The Github Repo class
+class Repository {
+  info() {
+    return `* ${this.name} -- ${this.watchers} watchers\n  ${this.description}\n`;
+  }
+}
 
-class Repository {}
-
-
-// Model some data
+// Model the class
 sculpt.model(Repository, {
   id: identity(),
   name: string(),
   description: string(),
   watchers: integer()
-}, {
-  provider: github,
-  classExtensions: true
 });
 
+// Decorate the class
+sculpt.decorate(Repository);
 
-// Fetch the data and log it to the console
+// Set the provider
+sculpt.provider(github.repo(), Repository);
+
+// Fetch repos from github, sort by watchers and log to the console
 Repository.find().then(repos => {
-  repos.forEach(repo => {
-    console.log(`${repo.name} -- ${repo.watchers} watchers`)
-  })
+  repos.sort((a, b) => a.watchers > b.watchers ? -1 : 1).forEach(repo => {
+    console.log(repo.info())
+  });
 });
 ```
+
+`github-provider.js`:
+
+```js
+const https = require('https');
+const Provider = require('sculpt/Provider');
+
+// Internal method to make HTTP request to the Github API.
+const request = (path) => {
+  const headers = {'User-Agent': 'sculpt demo'};
+  return new Promise((resolve, reject) => {
+    https.request(`https://api.github.com${path}`, {headers}, res => {
+      let body = '';
+      res.on('data', data => {body += data});
+      res.on('end', () => resolve(JSON.parse(body)));
+    }).end();
+  })
+}
+
+// Our custom provider class
+class GithubProvider extends Provider {
+  constructor(url) {
+    super();
+    this.url = url;
+  }
+  async find(filters = [], bindings) {
+    return request(this.url);
+  }
+}
+
+// Export the API
+module.exports = options => {
+  const repo = () => {
+    return new GithubProvider(`/users/${options.user}/repos`);
+  }
+  return {repo};
+};
+```
+
+
+
+## Extend your classes with sculpt helpers:
+
+```js
+sculpt.decorate(User);
+
+let user = await User.find({id: 1});
+username = 'Mary';
+
+// Save changes
+await user.save();
+
+// You can also delete
+await user.delete();
+```
+
+

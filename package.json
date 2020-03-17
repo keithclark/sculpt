@@ -1,18 +1,21 @@
 {
   "name": "sculpt",
   "version": "1.0.0",
-  "description": "```js // Import sculpt const sculpt = require('sculpt'); const {identifier, url, string} = require('sculpt/bindings');",
+  "description": "A library for modelling JavaScript classes and connecting them to data stores",
   "main": "index.js",
-  "directories": {
-    "example": "examples",
-    "test": "test"
-  },
   "scripts": {
     "test": "jasmine"
   },
-  "author": "",
+  "author": {
+    "name": "Keith Clark",
+    "url": "https://keithclark.co.uk"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keithclark/sculpt.git"
+  },
   "license": "MIT",
-  "dependencies": {
+  "devDependencies": {
     "jasmine": "^3.5.0"
   }
 }

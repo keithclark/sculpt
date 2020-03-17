@@ -1,6 +1,5 @@
 const Model = require('./Model');
 const BindingMap = require('./bindingMap');
-const TypeDefinition = require('./TypeDefinition');
 const Provider = require('./Provider');
 const SculptError = require('./SculptError');
 const { getObjectName } = require('./utils');
@@ -9,7 +8,7 @@ const { assertTypeOf, assertTypeCanBeModelled } = require('./assert');
 
 module.exports = () => {
 
-  const typeDefinitions = new WeakMap();
+  const modelMap = new WeakMap();
   const properties = {};
 
 
@@ -19,7 +18,7 @@ module.exports = () => {
    * @param {*} type
    */
   const assertTypeIsModelled = type => {
-    if (!typeDefinitions.has(type)) {
+    if (!modelMap.has(type)) {
       assertTypeCanBeModelled(type);
       throw new SculptError(`No model for type '${getObjectName(type)}'`);
     }
@@ -27,36 +26,17 @@ module.exports = () => {
 
 
   /**
-   * Asserts that the given type has a model and provider so it can be connected
-   * to a data source.
-   *
-   * @param {*} type
-   */
-  const getModelAndProviderForType = type => {
-    assertTypeIsModelled(type);
-    let {model, provider} = typeDefinitions.get(type);
-    if (!provider) {
-      throw new SculptError(`No provider for type '${getObjectName(type)}'`);
-    }
-    return {model, provider};
-  };
-
-
-  /**
-   * Set a provider
+   * Set a data provider for one or more models
    *
    * @param {Object} provider - Provider
    * @param {Class|Class[]} [type] - Type of
    */
   const provider = (provider, types) => {
-    assertTypeOf(provider, Provider, 'provider');
-
     if (!Array.isArray(types)) {
       types = [types];
     }
     types.forEach(type => {
-      assertTypeIsModelled(type);
-      typeDefinitions.get(type).provider = provider;
+      getModelByType(type).provider = provider;
     });
   };
 
@@ -96,11 +76,10 @@ module.exports = () => {
 
     let bindingMap = new BindingMap(bindings);
     let model = new Model(type, bindingMap);
-    let definition = new TypeDefinition(model);
-    typeDefinitions.set(type, definition);
+    modelMap.set(type, model);
 
     if (options.provider) {
-      provider(options.provider, type);
+      model.provider = type;
     }
 
     if (options.decorate === true || (properties.decorate === true && options.decorate !== false)) {
@@ -136,6 +115,11 @@ module.exports = () => {
   };
 
 
+  const getModelByType = type => {
+    assertTypeIsModelled(type)
+    return modelMap.get(type);
+  }
+
   /**
    * Retreive a model
    *
@@ -144,8 +128,7 @@ module.exports = () => {
    * @param {Object} [order] - The sort order to return results in
    */
   const find = async (type, filters, order) => {
-    let {model, provider} = getModelAndProviderForType(type);
-    return model.find(provider, filters, order);
+    return getModelByType(type).find(filters, order);
   };
 
 
@@ -155,8 +138,7 @@ module.exports = () => {
    * @param {*} instance
    */
   const destroy = async (instance) => {
-    let {model, provider} = getModelAndProviderForType(instance.constructor);
-    return model.delete(provider, instance);
+    return getModelByType(instance.constructor).delete(instance);
   };
 
 
@@ -166,8 +148,7 @@ module.exports = () => {
    * @param {*} instance
    */
   const commit = async (instance) => {
-    let {model, provider} = getModelAndProviderForType(instance.constructor);
-    return model.commit(provider, instance);
+    return getModelByType(instance.constructor).commit(instance);
   };
 
 
@@ -176,9 +157,7 @@ module.exports = () => {
    * @param {*} instance
    */
   const validate = (instance) => {
-    let type = instance.constructor;
-    assertTypeIsModelled(type);
-    let {model} = typeDefinitions.get(type);
+    let model = getModelByType(instance.constructor);
     let boundValues = model.bindings.getObjectValues(instance);
     model.validateValues(boundValues);
   };

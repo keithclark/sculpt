@@ -1,4 +1,6 @@
 const InvalidBindingValueError = require('./errors/InvalidBindingValueError');
+const { assertModelHasProvider, assertValidProvider } = require('./assert');
+
 
 class Model {
 
@@ -6,13 +8,37 @@ class Model {
    *
    * @param {Class} type - The class to be modeled
    * @param {BindingMap} bindings - The binding list to model against
-   * @param {Provider} [provider] - The provider used to store the model data
    */
   constructor(type, bindings) {
     this.type = type;
     this.bindings = bindings;
+    this._provider = null;
     this._modelIdMap = new WeakMap();
     this._modelPendingCommitSet = new WeakSet();
+  }
+
+
+  /**
+   * Sets the data provider for this model. If `null` is passed, the current
+   * provider is removed.
+   *
+   * @param {Provider} provider - The provider to use for accessing a data store
+   */
+  set provider(provider) {
+    if (provider !== null) {
+      assertValidProvider(provider);
+    }
+    this._provider = provider;
+  }
+
+
+  /**
+   * Gets the data provider for this model.
+   *
+   * @returns {Provider|null} The current provider
+   */
+  get provider() {
+    return this._provider;
   }
 
 
@@ -110,11 +136,12 @@ class Model {
    * @param {Object} [filters]
    * @param {Object} [order]
    */
-  find(provider, filters, order) {
+  find(filters, order) {
+    assertModelHasProvider(this);
     let {bindings} = this;
     this.validateFilters(filters);
     this.validateOrder(order);
-    return provider.find(filters, bindings).then(results => {
+    return this.provider.find(filters, bindings).then(results => {
       return results.map(result => this.createInstance(result));
     });
   }
@@ -124,9 +151,10 @@ class Model {
    *
    * @param {*} instance
    */
-  async delete(provider, instance) {
+  async delete(instance) {
     let {bindings} = this;
     let {identityName} = bindings;
+    assertModelHasProvider(this);
 
     this.validateInstance(instance);
     this.validateIdentity(instance);
@@ -139,7 +167,7 @@ class Model {
 
 
     let filters = {[identityName]: instance[identityName]};
-    if (await provider.delete(filters, bindings)) {
+    if (await this.provider.delete(filters, bindings)) {
       this._modelIdMap.delete(instance);
       return true;
     }
@@ -154,8 +182,10 @@ class Model {
    *
    * @param {Object} instance
    */
-  async commit(provider, instance) {
+  async commit(instance) {
     let {bindings} = this;
+
+    assertModelHasProvider(this);
 
     this.validateInstance(instance);
     this.validateIdentity(instance);
@@ -179,7 +209,7 @@ class Model {
 
     // If there's no ID, this must be a new instance
     if (!id) {
-      id = await provider.create(boundValues, bindings);
+      id = await this.provider.create(boundValues, bindings);
       instance[identityName] = id;
       this._modelIdMap.set(instance, id);
       this._modelPendingCommitSet.delete(instance);
@@ -187,7 +217,7 @@ class Model {
     }
 
     let filters = {[identityName]: id};
-    await provider.update(filters, boundValues, bindings);
+    await this.provider.update(filters, boundValues, bindings);
     this._modelPendingCommitSet.delete(instance);
     return true;
   }

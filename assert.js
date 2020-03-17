@@ -1,4 +1,18 @@
 const { getObjectName } = require('./utils');
+const SculptError = require('./SculptError');
+const Provider = require('./Provider');
+
+
+const assertModelHasProvider = model => {
+  if (!model.provider) {
+    throw new SculptError(`Model '${getObjectName(model.type)}' doesn't have a provider`);
+  }
+};
+
+
+const assertValidProvider = provider => {
+  assertTypeOf(provider, Provider, 'provider');
+}
 
 
 const assertTypeOf = (obj, type, prefix = 'value') => {
@@ -19,5 +33,7 @@ const assertTypeCanBeModelled = type => {
 
 module.exports = {
   assertTypeOf,
-  assertTypeCanBeModelled
+  assertTypeCanBeModelled,
+  assertModelHasProvider,
+  assertValidProvider
 }
