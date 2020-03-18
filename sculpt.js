@@ -1,6 +1,5 @@
 const Model = require('./Model');
-const BindingMap = require('./bindingMap');
-const Provider = require('./Provider');
+const BindingMap = require('./BindingMap');
 const SculptError = require('./SculptError');
 const { getObjectName } = require('./utils');
 const { assertTypeOf, assertTypeCanBeModelled } = require('./assert');
