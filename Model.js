@@ -139,10 +139,16 @@ class Model {
   find(filters, order) {
     assertModelHasProvider(this);
     let {bindings} = this;
+    let {identityName} = bindings;
+
     this.validateFilters(filters);
     this.validateOrder(order);
     return this.provider.find(filters, bindings).then(results => {
-      return results.map(result => this.createInstance(result));
+      return results.map(result => {
+        let instance = this.createInstance(result);
+        this._modelIdMap.set(instance, instance[identityName]);
+        return instance;
+      });
     });
   }
 
@@ -212,17 +218,15 @@ class Model {
       id = await this.provider.create(boundValues, bindings);
       instance[identityName] = id;
       this._modelIdMap.set(instance, id);
-      this._modelPendingCommitSet.delete(instance);
-      return true;
+    } else {
+      let filters = {[identityName]: id};
+      await this.provider.update(filters, boundValues, bindings);
     }
 
-    let filters = {[identityName]: id};
-    await this.provider.update(filters, boundValues, bindings);
+    // unlock the resource
     this._modelPendingCommitSet.delete(instance);
     return true;
   }
-
 }
-
 
 module.exports = Model;
