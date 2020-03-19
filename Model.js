@@ -1,3 +1,4 @@
+const SculptError = require('./SculptError');
 const InvalidBindingValueError = require('./errors/InvalidBindingValueError');
 const { assertModelHasProvider, assertValidProvider } = require('./assert');
 
@@ -75,7 +76,7 @@ class Model {
       Object.entries(order).forEach(([name, value]) => {
         this.bindings.ensure(name);
         if (value !== 'asc' && value !== 'desc') {
-          throw new Error(`Invalid sort value '${value}' for binding '${name}'.`);
+          throw new SculptError(`Invalid sort value '${value}' for binding '${name}'.`);
         }
       });
     }
@@ -103,7 +104,7 @@ class Model {
   validateInstance(instance) {
     // Check the type of instance we're about to commit is compatible.
     if (!(instance instanceof this.type)) {
-      throw new Error('Invalid instance');
+      throw new SculptError('Invalid instance');
     }
   }
 
@@ -117,7 +118,7 @@ class Model {
     // Ensure we have an identity field. Without one, we won't be able to
     // uniquely identify this resource when we want to retrieve it later.
     if (!identityName) {
-      throw new Error('An identity binding is required to commit');
+      throw new SculptError('An identity binding is required to commit');
     }
 
     // Ensure that the identity of this resource hasn't been tampered with. This
@@ -125,7 +126,7 @@ class Model {
     // or existing models having their ID changed.
     let id = this._modelIdMap.get(instance);
     if (instance[identityName] !== id) {
-      throw new Error('Identity binding values cannot be set externally');
+      throw new SculptError('Identity binding values cannot be set externally');
     }
   }
 
@@ -207,7 +208,7 @@ class Model {
     // If there's a commit in progress for this instance then throw an error.
     // This is likely to be caused by a missing `await`
     if (this._modelPendingCommitSet.has(instance)) {
-      throw new Error('Unable to commit this model because the provider is already committing changes to it.');
+      throw new SculptError('Unable to commit this model because the provider is already committing changes to it.');
     }
 
     // lock the resource

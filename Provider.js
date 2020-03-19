@@ -1,5 +1,7 @@
+const SculptError = require('./SculptError');
+
 const notImplemented = method => {
-  throw new Error(`Provider.${method}() - method not implemented`);
+  throw new SculptError(`Provider.${method}() - method not implemented`);
 }
 
 module.exports = class Provider {
