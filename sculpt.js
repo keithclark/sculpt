@@ -12,9 +12,11 @@ module.exports = () => {
 
 
   /**
-   * Asserts that a type has been modelled with `scupt.model`
+   * Asserts that a type has been modelled with `scupt.model`. Throws a
+   * `SculptError` if no model could be found
    *
-   * @param {*} type
+   * @private
+   * @param {Class} type - the type to check
    */
   const assertTypeIsModelled = type => {
     if (!modelMap.has(type)) {
@@ -25,10 +27,23 @@ module.exports = () => {
 
 
   /**
+   * Retrieve the model for a given class. Throws an error if no model could be
+   * found.
+   *
+   * @private
+   * @param {Class} type — the class to get the model of
+   */
+  const getModelByType = type => {
+    assertTypeIsModelled(type);
+    return modelMap.get(type);
+  }
+
+
+  /**
    * Set a data provider for one or more models
    *
-   * @param {Object} provider - Provider
-   * @param {Class|Class[]} [type] - Type of
+   * @param {Provider} provider - The provider responsible for serving data
+   * @param {Class|Class[]} [type] - Casses the provider will service
    */
   const provider = (provider, types) => {
     if (!Array.isArray(types)) {
@@ -43,8 +58,8 @@ module.exports = () => {
   /**
    * Set a sculpt-level configuration property
    *
-   * @param {*} property
-   * @param {*} value
+   * @param {string} property - the name of the property to set
+   * @param {*} value - the new value for the property
    */
   const set = (property, value) => {
     properties[property] = value;
@@ -54,7 +69,8 @@ module.exports = () => {
   /**
    * Get a sculpt-level configuration property
    *
-   * @param {*} property
+   * @param {string} property - the property to return
+   * @returns {*} The property value
    */
   const get = (property) => {
     return properties[property];
@@ -62,10 +78,11 @@ module.exports = () => {
 
 
   /**
+   * Model a class with sculpt by defining its bindings.
    *
-   * @param {*} type
-   * @param {*} bindings
-   * @param {*} options
+   * @param {Class} type - the class to model
+   * @param {*} bindings - the property bindings to model
+   * @param {*} options - additional configuration options
    */
   const model = (type, bindings, options = {}) => {
 
@@ -91,7 +108,7 @@ module.exports = () => {
    * Add sculpt syntactic sugar to an object exposing `Class.find()`,
    * `instance.save()` and `instance.delete()`
    *
-   * @param {Object} type - The object to decorate
+   * @param {Class} type - The class to decorate
    */
   const decorate = type => {
 
@@ -114,15 +131,10 @@ module.exports = () => {
   };
 
 
-  const getModelByType = type => {
-    assertTypeIsModelled(type)
-    return modelMap.get(type);
-  }
-
   /**
-   * Retreive a model
+   * Retreive a model from a data store
    *
-   * @param {Object} type - The model type to search for
+   * @param {Class} type - The model type to search for
    * @param {Object} [filters] - The parameters to filter against
    * @param {Object} [order] - The sort order to return results in
    */
@@ -134,7 +146,7 @@ module.exports = () => {
   /**
    * Permanently remove an object from the data store
    *
-   * @param {*} instance
+   * @param {Class} instance - the instance to remove
    */
   const destroy = async (instance) => {
     return getModelByType(instance.constructor).delete(instance);
@@ -142,9 +154,9 @@ module.exports = () => {
 
 
   /**
-   * Commit some data
+   * Commits the property values of modelled class to a data store
    *
-   * @param {*} instance
+   * @param {Class} instance - the instance to commit
    */
   const commit = async (instance) => {
     return getModelByType(instance.constructor).commit(instance);
@@ -152,8 +164,10 @@ module.exports = () => {
 
 
   /**
+   * Validates an modelled class against its bindinds. Throws an error
+   * if validation fails
    *
-   * @param {*} instance
+   * @param {Class} instance
    */
   const validate = (instance) => {
     let model = getModelByType(instance.constructor);
