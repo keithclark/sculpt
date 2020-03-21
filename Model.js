@@ -1,3 +1,8 @@
+/**
+ * Modelling is how classes are described to Sculpt. A modelled class can be
+ * instantiated, validated and, if configured, persisted through a provider.
+ */
+
 const SculptError = require('./SculptError');
 const InvalidBindingValueError = require('./errors/InvalidBindingValueError');
 const { assertModelHasProvider, assertValidProvider } = require('./assert');
@@ -57,8 +62,9 @@ class Model {
 
 
   /**
+   * Ensures an object of key/value filters are valid for this model.
    *
-   * @param {*} filters
+   * @param {Object} filters - Filters to validate
    */
   validateFilters(filters) {
     if (filters) {
@@ -68,8 +74,9 @@ class Model {
 
 
   /**
+   * Ensures an object of key/value sort orders are valid for this model.
    *
-   * @param {*} order
+   * @param {Object} order - Orders to validate
    */
   validateOrder(order) {
     if (order) {
@@ -84,8 +91,9 @@ class Model {
 
 
   /**
+   * Ensures an object of key/value pairs are valid for this model.
    *
-   * @param {*} values
+   * @param {Object} values - Values to validate
    */
   validateValues(values) {
     Object.entries(values).forEach(([name, value]) => {
@@ -98,8 +106,10 @@ class Model {
 
 
   /**
+   * Ensure an instance is modelled by this model. Throws an error is the
+   * instance is incompatible.
    *
-   * @param {*} instance
+   * @param {*} instance - The object instance to validate
    */
   validateInstance(instance) {
     // Check the type of instance we're about to commit is compatible.
@@ -110,7 +120,9 @@ class Model {
 
 
   /**
+   * Ensure an instance has an identity and that it has not been tampered with.
    *
+   * @param {*} instance - The object instance to validate
    */
   validateIdentity(instance) {
     let {identityName} = this.bindings;
@@ -132,7 +144,8 @@ class Model {
 
 
   /**
-   * Retrieve a filtered list of models
+   * Retrieve a filtered list of model instances from a data store useing the
+   * configured provider.
    *
    * @param {Object} [filters]
    * @param {Object} [order]
@@ -155,6 +168,8 @@ class Model {
 
 
   /**
+   * Delete an instance of the modelled class from a data store using the
+   * configured provider. If no provider is configured an error will be thrown.
    *
    * @param {*} instance
    */
@@ -172,7 +187,6 @@ class Model {
       return false;
     }
 
-
     let filters = {[identityName]: instance[identityName]};
     if (await this.provider.delete(filters, bindings)) {
       this._modelIdMap.delete(instance);
@@ -183,9 +197,10 @@ class Model {
 
 
   /**
-   * Commit a model to a data provider. If the model being committed was
-   * previouly retrieved from the provider then it will be amended. If the model
-   * is new, it will be added.
+   * Commit a model instance to a data store using the configured provider. If
+   * the instance was previouly retrieved from the provider then it will be
+   * amended. If the instance is new, it will be added to the store by the
+   * provider. If no provider is configured an error will be thrown.
    *
    * @param {Object} instance
    */
