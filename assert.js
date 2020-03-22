@@ -21,6 +21,13 @@ const assertTypeOf = (obj, type, prefix = 'value') => {
   }
 };
 
+
+const assertIsObjectLiteral = (obj, prefix = 'value') => {
+  if (Object.prototype.toString.call(obj) !== '[object Object]') {
+    throw new TypeError(`Invalid ${prefix} type: '${getObjectName(obj)}'.`);
+  };
+}
+
 /**
  * Checks a type to see if it can be modelled. Throws a TypeError if it cannot.
  *
@@ -32,6 +39,7 @@ const assertTypeCanBeModelled = type => {
 };
 
 module.exports = {
+  assertIsObjectLiteral,
   assertTypeOf,
   assertTypeCanBeModelled,
   assertModelHasProvider,

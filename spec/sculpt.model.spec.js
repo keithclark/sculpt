@@ -26,7 +26,6 @@ describe('calling sculpt.model', () => {
 
   describe('with anything other than an object for the second argument', () => {
     it('should throw a TypeError', () => {
-      class TestClass {}
       expect(() => testSculpt.model(TestClass)).toThrowError(TypeError);
       expect(() => testSculpt.model(TestClass, 0)).toThrowError(TypeError);
       expect(() => testSculpt.model(TestClass, false)).toThrowError(TypeError);
@@ -34,6 +33,7 @@ describe('calling sculpt.model', () => {
       expect(() => testSculpt.model(TestClass, [])).toThrowError(TypeError);
       expect(() => testSculpt.model(TestClass, null)).toThrowError(TypeError);
       expect(() => testSculpt.model(TestClass, undefined)).toThrowError(TypeError);
+      expect(() => testSculpt.model(TestClass, ()=>{})).toThrowError(TypeError);
     });
   });
 

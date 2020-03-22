@@ -2,7 +2,7 @@ const Model = require('./Model');
 const BindingMap = require('./BindingMap');
 const SculptError = require('./SculptError');
 const { getObjectName } = require('./utils');
-const { assertTypeOf, assertTypeCanBeModelled } = require('./assert');
+const { assertTypeCanBeModelled, assertIsObjectLiteral } = require('./assert');
 
 
 module.exports = () => {
@@ -87,8 +87,8 @@ module.exports = () => {
   const model = (type, bindings, options = {}) => {
 
     assertTypeCanBeModelled(type);
-    assertTypeOf(bindings, Object, 'property bindings');
-    assertTypeOf(options, Object, 'options');
+    assertIsObjectLiteral(bindings, 'property bindings');
+    assertIsObjectLiteral(options, 'options');
 
     let bindingMap = new BindingMap(bindings);
     let model = new Model(type, bindingMap);
