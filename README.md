@@ -157,9 +157,9 @@ Data providers must extend the sculpt `Provider` class and shold provide method 
 `app.js`
 
 ```js
-const sculpt = require('sculpt')();
-const {identity, integer, string} = require('sculpt/bindings');
-const githubProvider = require('./github-provider');
+import sculpt from 'sculpt';
+import {identity, integer, string} from 'sculpt/bindings';
+import githubProvider from './github-provider.js';
 
 // Create the provider
 const github = githubProvider({user: 'keithclark'});
@@ -171,8 +171,10 @@ class Repository {
   }
 }
 
+const mySculpt = sculpt();
+
 // Model the class
-sculpt.model(Repository, {
+mySculpt.model(Repository, {
   id: identity(),
   name: string(),
   description: string(),
@@ -180,10 +182,10 @@ sculpt.model(Repository, {
 });
 
 // Decorate the class
-sculpt.decorate(Repository);
+mySculpt.decorate(Repository);
 
 // Set the provider
-sculpt.provider(github.repo(), Repository);
+mySculpt.provider(github.repo(), Repository);
 
 // Fetch repos from github, sort by watchers and log to the console
 Repository.find().then(repos => {
@@ -196,8 +198,8 @@ Repository.find().then(repos => {
 `github-provider.js`:
 
 ```js
-const https = require('https');
-const Provider = require('sculpt/Provider');
+import https from 'https';
+import Provider from 'sculpt/objects/Provider.js';
 
 // Internal method to make HTTP request to the Github API.
 const request = (path) => {
