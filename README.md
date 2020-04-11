@@ -8,46 +8,48 @@ Bindings are used to describe the properties of your class to sculpt. They are u
 
 ```js
 // Import sculpt
-const sculpt = require('sculpt');
+import sculpt from 'sculpt';
 
-// Import the bindings
-const {identifier, string, integer} = require('sculpt/bindings');
+// Import the bindings we need
+import { identifier, string, integer } from 'sculpt/bindings';
 
-// Our class
+// A class from our application
 class User {}
 
-// Define the class bindings
-let userBindings = {
+// create a new sculpt
+const mySculpt = sculpt();
+
+// Model the class
+mySculpt.model(User, {
   id: identifier(),
   name: string(),
   email: string(),
   age: integer()
-};
-
-// Model the class
-sculpt.model(User, userBindings);
+);
 ```
 
 ## Property validation
 
-Once a class has been modeeled sculpt can validate property values:
+Once a class has been modelled sculpt can validate property values:
 
 ```js
-const sculpt = require('sculpt');
-const {string} = require('sculpt/bindings');
+import sculpt from 'sculpt';
+import { string } from 'sculpt/bindings';
 
 // Our class
 class User {}
 
-sculpt.model(User, {
+const mySculpt = sculpt();
+
+mySculpt.model(User, {
   name: string({required: true}),
-  email: string(),
+  email: string()
 });
 
 let testUser = new User();
 
 // This will throw an error because name is required.
-sculpt.validate(testUser);
+mySculpt.validate(testUser);
 ```
 
 ## Data providers
@@ -55,8 +57,7 @@ sculpt.validate(testUser);
 Data providers allow you to create instances of your applications classes directly from a datasource (mysql, mongoDB, a REST API etc.) and write any changes you make back. You can set a data provider for a model using `sculpt.provider()`:
 
 ```js
-const sculpt = require('sculpt');
-const mysqlProvider = require('@sculpt/provider-mysql');
+import mysqlProvider from '@sculpt/provider-mysql';
 
 // We'll be connecting to a mysql database
 const mysql = mysqlProvider({
@@ -65,18 +66,20 @@ const mysql = mysqlProvider({
   pass: 'pass'
 });
 
-// Tell sculpt that data will be provided through the `users` table
-sculpt.provider(mysql.table('users'), User);
+// Sculpt setup code ommited for brevity
 
-// Fetch a user by ID.
-const user = await sculpt.find(User, {id: 1});
+// Tell sculpt that `User` data will be provided through the `users` table
+mySculpt.provider(mysql.table('users'), User);
 
-// Update the user
-user.name = 'bob'
-await sculpt.commit(user);
+// Fetch a `User` isntance by ID.
+const user = await mySculpt.find(User, {id: 1});
 
-// Delete the user
-await sculpt.delete(user);
+// Update an existing `User` instance
+user.name = 'bob';
+let success = await mySculpt.commit(user);
+
+// Delete an existing `User` instance
+let success = await mySculpt.delete(user);
 ```
 
 You can also specify a provider when modelling a class by passing it as an option to `sculpt.model()`:
@@ -87,20 +90,54 @@ sculpt.model(User, userBindings, {
 });
 ```
 
+Models can only be connected to a datastore if they have an `identity` binding.
+
+### Finding data
+
+In addition to passing the class you wish to retrive, `sculpt.find()` accepts a second argument - an object literal - which is used to filter data. The object's key should be the binding name you wish to filter on and the value should be the value you wish to match. For example, to find a `User` with an `id` of `1`:
+
+```js
+const user = await mySculpt.find(User, {id: 1});
+```
+
+Sculpt providers can perform more complex searching using filters:
+
+```js
+import { greaterThan, includes } from 'sculpt/filters';
+
+const user = await mySculpt.find(User, {age: between(18, 30)});
+const user = await mySculpt.find(User, {level: includes(['admin', 'sysop'])});
+```
+
+Sculpt provides the following filters out of the box:
+
+Filter | Description
+-|-
+`equals(value)` | Returns data if the binding value is equal to `value`
+`notEquals(value)` | Returns data if the binding value is not equal to `value`
+`lessThan(value)` | Returns data if the binding value is less than `value`
+`lessThanOrEqualTo(value)` | Returns data if the binding value is less than or equal to `value`
+`greaterThan(value)` | Returns data if the binding value is greater than `value`
+`greaterThanOrEqualTo(value)` | Returns data if the binding value is greater than or equal to `value`
+`includes([value, ...])` | Returns data if the binding value is included in the array `value`
+`excludes([value, ...])` | Returns data if the binding value is not included in the array `value`
+`between(min, max)` | Returns data if the binding value is greater than `min` and less than `max`
+`notBetween(min, max)` | Returns data if the binding value is less than `min` or greater than `max`
+
+
 
 ## Extend your classes with sculpt helpers:
 
 ```js
 sculpt.decorate(User);
 
-// Now you can call `find()` direcly on the instance
+// Now you can call `find()` statically...
 let user = await User.find({id: 1});
-username = 'Mary';
 
-// And save changes...
+// ...and save changes to an instance...
 await user.save();
 
-// You can also delete...
+// ...and also delete an instance...
 await user.delete();
 ```
 

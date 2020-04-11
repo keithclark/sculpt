@@ -1,5 +1,5 @@
-const sculpt = require('../sculpt');
-const Provider = require('../Provider');
+import sculpt from '../src/sculpt.js';
+import Provider from '../src/objects/Provider.js';
 
 class TestClass {
 
@@ -28,6 +28,7 @@ describe('calling sculpt.provider', () => {
       expect(() => testSculpt.provider([])).toThrowError(TypeError);
       expect(() => testSculpt.provider({})).toThrowError(TypeError);
       expect(() => testSculpt.provider(undefined)).toThrowError(TypeError);
+      expect(() => testSculpt.provider(class{})).toThrowError(TypeError);
     });
   });
 
@@ -45,7 +46,7 @@ describe('calling sculpt.provider', () => {
     describe('with a `Provider` instance', () => {
       it('should set the provider', async () => {
         let spy = spyOn(provider, 'find').and.callThrough();
-        await testSculpt.find(TestClass)
+        await testSculpt.find(TestClass);
         expect(spy).toHaveBeenCalled();
       });
     });
