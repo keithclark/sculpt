@@ -1,7 +1,7 @@
-const sculpt = require('../sculpt');
-const SculptError = require('../SculptError.js');
-const {identity} = require('../bindings');
-const Provider = require('../Provider');
+import sculpt from '../src/sculpt.js';
+import SculptError from '../src/objects/SculptError.js';
+import Provider from '../src/objects/Provider.js';
+import {identity} from '../src/bindings.js';
 
 
 

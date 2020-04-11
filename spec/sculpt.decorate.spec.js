@@ -1,4 +1,4 @@
-const sculpt = require('../sculpt');
+import sculpt from '../src/sculpt.js';
 
 
 describe('calling sculpt.decorate', () => {

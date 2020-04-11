@@ -2,9 +2,9 @@
   "name": "sculpt",
   "version": "1.0.0",
   "description": "A library for modelling JavaScript classes and connecting them to data stores",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "jasmine"
+    "test": "node -r esm node_modules/jasmine/bin/jasmine.js"
   },
   "author": {
     "name": "Keith Clark",
@@ -15,7 +15,17 @@
     "url": "git+https://github.com/keithclark/sculpt.git"
   },
   "license": "MIT",
+  "exports": {
+    ".": "./src/sculpt.js",
+    "./": "./src/",
+    "./objects/": "./src/objects/",
+    "./filters": "./src/filters.js",
+    "./bindings": "./src/bindings.js",
+    "./filters/": "./src/filters/",
+    "./bindings/": "./src/bindings/"
+  },
   "devDependencies": {
+    "esm": "^3.2.25",
     "jasmine": "^3.5.0"
   }
 }
